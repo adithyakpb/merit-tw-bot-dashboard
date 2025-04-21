@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Live Monitoring Dashboard</title>
+    
+    <!-- Include Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Include Socket.IO for real-time updates -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-radius: 8px;
+            --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            
+            --bg-color: #f5f7fa;
+            --card-bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #eeeeee;
+            --content-box-bg: #f8f9fa;
+            --hover-color: #e9ecef;
+        }
+        
+        [data-theme="dark"] {
+            --primary-color: #5a8dd6;
+            --secondary-color: #adb5bd;
+            --success-color: #48c774;
+            --warning-color: #ffdd57;
+            --danger-color: #f14668;
+            
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --text-color: #e6e6e6;
+            --border-color: #333333;
+            --content-box-bg: #2d2d2d;
+            --hover-color: #333333;
+            --box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .card {
+            background: var(--card-bg-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        
+        .metrics-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            background-color: var(--hover-color);
+        }
+        
+        .metric-box {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            background: var(--card-bg-color);
+            box-shadow: var(--box-shadow);
+            transition: background-color 0.3s ease;
+        }
+        
+        .metric-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-connected {
+            background-color: var(--success-color);
+        }
+        
+        .status-disconnected {
+            background-color: var(--danger-color);
+        }
+        
+        .status-text {
+            font-size: 14px;
+            margin-right: 15px;
+        }
+        
+        .last-update {
+            font-size: 14px;
+            color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>MongoDB Live Monitoring Dashboard</h1>
+        <div style="display: flex; align-items: center;">
+            <div>
+                <span class="status-indicator" id="connection-status"></span>
+                <span class="status-text" id="connection-text">Connecting...</span>
+            </div>
+            <span class="last-update" id="last-update"></span>
+            
+            <div class="time-scale-selector" style="margin-left: 15px;">
+                <label for="time-scale">Time Scale:</label>
+                <select id="time-scale">
+                    <option value="minute">Minute</option>
+                    <option value="hour">Hour</option>
+                    <option value="day" selected>Day</option>
+                </select>
+            </div>
+            
+            <button id="theme-toggle" class="theme-toggle" style="margin-left: 15px;">
+                <span id="theme-icon">🌙</span>
+                <span id="theme-text">Dark Mode</span>
+            </button>
+        </div>
+    </div>
+    
+    <div class="dashboard-container">
+        <!-- Summary Section -->
+        <div class="card full-width">
+            <h2>Summary</h2>
+            <div class="metrics-summary" id="metrics-summary">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Usage Section -->
+        <div class="card">
+            <h2>Message Volume</h2>
+            <div class="chart-container">
+                <canvas id="message-volume-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Token Usage Section -->
+        <div class="card">
+            <h2>Token Usage</h2>
+            <div class="chart-container">
+                <canvas id="token-usage-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Processing Time Section -->
+        <div class="card">
+            <h2>Processing Time</h2>
+            <div class="chart-container">
+                <canvas id="processing-time-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Model Usage Section -->
+        <div class="card">
+            <h2>Model Usage</h2>
+            <div class="chart-container">
+                <canvas id="model-usage-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- User Distribution Section -->
+        <div class="card">
+            <h2>Browser Distribution</h2>
+            <div class="chart-container">
+                <canvas id="browser-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- OS Distribution Section -->
+        <div class="card">
+            <h2>OS Distribution</h2>
+            <div class="chart-container">
+                <canvas id="os-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Time of Day Section -->
+        <div class="card">
+            <h2>Time of Day Usage</h2>
+            <div class="chart-container">
+                <canvas id="time-of-day-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Session Duration Section -->
+        <div class="card">
+            <h2>Session Duration</h2>
+            <div class="chart-container">
+                <canvas id="session-duration-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Model Cost Section -->
+        <div class="card full-width">
+            <h2>Model Cost</h2>
+            <div class="chart-container">
+                <canvas id="model-cost-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard JavaScript -->
+    <script>
+        // Initialize charts
+        let charts = {};
+        
+        // Initialize Socket.IO connection
+        const socket = io();
+        
+        // Connection status
+        const connectionStatus = document.getElementById('connection-status');
+        const connectionText = document.getElementById('connection-text');
+        const lastUpdate = document.getElementById('last-update');
+        
+        // Socket.IO event handlers
+        socket.on('connect', function() {
+            connectionStatus.className = 'status-indicator status-connected';
+            connectionText.textContent = 'Connected';
+        });
+        
+        socket.on('disconnect', function() {
+            connectionStatus.className = 'status-indicator status-disconnected';
+            connectionText.textContent = 'Disconnected';
+        });
+        
+        socket.on('metrics_update', function(data) {
+            // Update last update time
+            const updateTime = new Date(data.timestamp).toLocaleTimeString();
+            lastUpdate.textContent = `Last update: ${updateTime}`;
+            
+            // Update time scale selector to match server
+            if (data.time_scale) {
+                document.getElementById('time-scale').value = data.time_scale;
+            }
+            
+            // Update dashboard with new data
+            updateDashboard(data);
+        });
+        
+        // Time scale selector
+        document.getElementById('time-scale').addEventListener('change', function() {
+            const newScale = this.value;
+            socket.emit('set_time_scale', { scale: newScale });
+        });
+        
+        // Theme toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+        
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            
+            if (currentTheme === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light Mode';
+            }
+            
+            // Update charts for the new theme
+            updateCharts();
+        });
+        
+        function updateDashboard(data) {
+            // Update summary metrics
+            updateSummaryMetrics(data.summary);
+            
+            // Update charts
+            updateMessageVolumeChart(data.time_series);
+            updateTokenUsageChart(data.time_series);
+            updateProcessingTimeChart(data.time_series);
+            updateModelUsageChart(data.model);
+            updateBrowserChart(data.user);
+            updateOSChart(data.user);
+            updateTimeOfDayChart(data.user);
+            updateSessionDurationChart(data.user);
+            updateModelCostChart(data.model);
+        }
+        
+        function updateSummaryMetrics(summary) {
+            const container = document.getElementById('metrics-summary');
+            container.innerHTML = '';
+            
+            // Define metrics to display
+            const metrics = [
+                { name: 'Total Sessions', value: summary.total_sessions },
+                { name: 'Active Sessions', value: summary.active_sessions },
+                { name: 'User Messages', value: summary.user_messages },
+                { name: 'Assistant Messages', value: summary.assistant_messages },
+                { name: 'Avg Processing Time (ms)', value: summary.avg_processing_time.toFixed(2) },
+                { name: 'Token Efficiency', value: summary.token_efficiency.toFixed(2) },
+                { name: 'Unique Users', value: summary.unique_users }
+            ];
+            
+            // Create metric boxes
+            metrics.forEach(metric => {
+                const metricBox = document.createElement('div');
+                metricBox.className = 'metric-box';
+                
+                const nameElement = document.createElement('div');
+                nameElement.className = 'metric-name';
+                nameElement.textContent = metric.name;
+                
+                const valueElement = document.createElement('div');
+                valueElement.className = 'metric-value';
+                valueElement.textContent = metric.value;
+                
+                metricBox.appendChild(nameElement);
+                metricBox.appendChild(valueElement);
+                
+                container.appendChild(metricBox);
+            });
+        }
+        
+        function updateMessageVolumeChart(timeSeriesData) {
+            const ctx = document.getElementById('message-volume-chart').getContext('2d');
+            
+            if (!charts.messageVolume) {
+                charts.messageVolume = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: timeSeriesData.dates,
+                        datasets: [
+                            {
+                                label: 'User Messages',
+                                data: timeSeriesData.user_messages,
+                                borderColor: '#4a6fa5',
+                                backgroundColor: 'rgba(74, 111, 165, 0.1)',
+                                tension: 0.1,
+                                fill: true
+                            },
+                            {
+                                label: 'Assistant Messages',
+                                data: timeSeriesData.assistant_messages,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                tension: 0.1,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.messageVolume.data.labels = timeSeriesData.dates;
+                charts.messageVolume.data.datasets[0].data = timeSeriesData.user_messages;
+                charts.messageVolume.data.datasets[1].data = timeSeriesData.assistant_messages;
+                charts.messageVolume.update();
+            }
+        }
+        
+        function updateTokenUsageChart(timeSeriesData) {
+            const ctx = document.getElementById('token-usage-chart').getContext('2d');
+            
+            if (!charts.tokenUsage) {
+                charts.tokenUsage = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: timeSeriesData.dates,
+                        datasets: [
+                            {
+                                label: 'Total Tokens',
+                                data: timeSeriesData.total_tokens,
+                                borderColor: '#dc3545',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                tension: 0.1,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.tokenUsage.data.labels = timeSeriesData.dates;
+                charts.tokenUsage.data.datasets[0].data = timeSeriesData.total_tokens;
+                charts.tokenUsage.update();
+            }
+        }
+        
+        function updateProcessingTimeChart(timeSeriesData) {
+            const ctx = document.getElementById('processing-time-chart').getContext('2d');
+            
+            if (!charts.processingTime) {
+                charts.processingTime = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: timeSeriesData.dates,
+                        datasets: [
+                            {
+                                label: 'Avg Processing Time (ms)',
+                                data: timeSeriesData.processing_times,
+                                borderColor: '#ffc107',
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                tension: 0.1,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.processingTime.data.labels = timeSeriesData.dates;
+                charts.processingTime.data.datasets[0].data = timeSeriesData.processing_times;
+                charts.processingTime.update();
+            }
+        }
+        
+        function updateModelUsageChart(modelData) {
+            const ctx = document.getElementById('model-usage-chart').getContext('2d');
+            
+            if (!charts.modelUsage) {
+                charts.modelUsage = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: modelData.models,
+                        datasets: [
+                            {
+                                data: modelData.usage_counts,
+                                backgroundColor: [
+                                    '#4a6fa5',
+                                    '#28a745',
+                                    '#dc3545',
+                                    '#ffc107',
+                                    '#6c757d',
+                                    '#17a2b8'
+                                ]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            } else {
+                charts.modelUsage.data.labels = modelData.models;
+                charts.modelUsage.data.datasets[0].data = modelData.usage_counts;
+                charts.modelUsage.update();
+            }
+        }
+        
+        function updateBrowserChart(userData) {
+            const ctx = document.getElementById('browser-chart').getContext('2d');
+            
+            if (!charts.browser) {
+                charts.browser = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: userData.browsers,
+                        datasets: [
+                            {
+                                data: userData.browser_counts,
+                                backgroundColor: [
+                                    '#4a6fa5',
+                                    '#28a745',
+                                    '#dc3545',
+                                    '#ffc107',
+                                    '#6c757d',
+                                    '#17a2b8'
+                                ]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            } else {
+                charts.browser.data.labels = userData.browsers;
+                charts.browser.data.datasets[0].data = userData.browser_counts;
+                charts.browser.update();
+            }
+        }
+        
+        function updateOSChart(userData) {
+            const ctx = document.getElementById('os-chart').getContext('2d');
+            
+            if (!charts.os) {
+                charts.os = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: userData.os_names,
+                        datasets: [
+                            {
+                                data: userData.os_counts,
+                                backgroundColor: [
+                                    '#4a6fa5',
+                                    '#28a745',
+                                    '#dc3545',
+                                    '#ffc107',
+                                    '#6c757d',
+                                    '#17a2b8'
+                                ]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            } else {
+                charts.os.data.labels = userData.os_names;
+                charts.os.data.datasets[0].data = userData.os_counts;
+                charts.os.update();
+            }
+        }
+        
+        function updateTimeOfDayChart(userData) {
+            const ctx = document.getElementById('time-of-day-chart').getContext('2d');
+            
+            if (!charts.timeOfDay) {
+                charts.timeOfDay = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: userData.hours,
+                        datasets: [
+                            {
+                                label: 'Sessions',
+                                data: userData.hour_counts,
+                                backgroundColor: 'rgba(74, 111, 165, 0.7)',
+                                borderColor: 'rgba(74, 111, 165, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.timeOfDay.data.labels = userData.hours;
+                charts.timeOfDay.data.datasets[0].data = userData.hour_counts;
+                charts.timeOfDay.update();
+            }
+        }
+        
+        function updateSessionDurationChart(userData) {
+            const ctx = document.getElementById('session-duration-chart').getContext('2d');
+            
+            // Create labels for bins
+            const labels = [];
+            for (let i = 0; i < userData.duration_distribution.length; i++) {
+                labels.push(`Bin ${i+1}`);
+            }
+            
+            if (!charts.sessionDuration) {
+                charts.sessionDuration = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Session Count',
+                                data: userData.duration_distribution,
+                                backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.sessionDuration.data.labels = labels;
+                charts.sessionDuration.data.datasets[0].data = userData.duration_distribution;
+                charts.sessionDuration.update();
+            }
+        }
+        
+        function updateModelCostChart(modelData) {
+            const ctx = document.getElementById('model-cost-chart').getContext('2d');
+            
+            // Extract data for chart
+            const models = [];
+            const inputCosts = [];
+            const outputCosts = [];
+            
+            modelData.cost_data.forEach(item => {
+                models.push(item.model);
+                inputCosts.push(item.input_cost);
+                outputCosts.push(item.output_cost);
+            });
+            
+            if (!charts.modelCost) {
+                charts.modelCost = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: models,
+                        datasets: [
+                            {
+                                label: 'Input Cost ($)',
+                                data: inputCosts,
+                                backgroundColor: 'rgba(74, 111, 165, 0.7)',
+                                borderColor: 'rgba(74, 111, 165, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Output Cost ($)',
+                                data: outputCosts,
+                                backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                                borderColor: 'rgba(220, 53, 69, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.modelCost.data.labels = models;
+                charts.modelCost.data.datasets[0].data = inputCosts;
+                charts.modelCost.data.datasets[1].data = outputCosts;
+                charts.modelCost.update();
+            }
+        }
+        
+        function updateCharts() {
+            // Force redraw all charts with new theme colors
+            Object.values(charts).forEach(chart => {
+                chart.update();
+            });
+        }
+    </script>
+</body>
+</html>

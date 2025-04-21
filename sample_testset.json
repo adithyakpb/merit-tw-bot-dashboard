@@ -1,0 +1,233 @@
+{
+  "inputs": [
+    {
+      "id": "52b97305-93f9-4ce0-bad6-c552e04b6bad",
+      "input": {
+        "id": "d6beb710-8345-473c-81cc-b5e939918875",
+        "content": "What is Natural Language Processing?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "96c27368-798a-451d-a105-d5f638c52368",
+        "content": "Natural Language Processing (NLP) is a subfield of linguistics, computer science, and artificial intelligence concerned with the interactions between computers and human language.  It involves programming computers to process and analyze large amounts of natural language data.\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "4",
+      "document_content": "content: Natural Language Processing (NLP) is a subfield of linguistics, computer science, and artificial intelligence concerned with the interactions between computers and human language. It involves programming computers to process and analyze large amounts of natural language data.\nmetadata: {'topic': 'ai', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "fccf8f1a-d1b2-4145-98c7-7d96d873d414",
+      "input": {
+        "id": "13bff33e-09b1-4ef0-b37c-3e3fc4e4c56c",
+        "content": "Which academic fields are relevant to the study of NLP?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "72fa79b9-866c-4f4b-b67c-0a183cd42eb3",
+        "content": "Linguistics, computer science, and artificial intelligence are relevant to the study of Natural Language Processing (NLP).\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "4",
+      "document_content": "content: Natural Language Processing (NLP) is a subfield of linguistics, computer science, and artificial intelligence concerned with the interactions between computers and human language. It involves programming computers to process and analyze large amounts of natural language data.\nmetadata: {'topic': 'ai', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "612df7e1-94ac-414a-b4ef-5d4a3a98c406",
+      "input": {
+        "id": "9a0ef38d-4094-46c0-8a2d-cc42f871b778",
+        "content": "Who created the Python programming language?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "647b7382-f061-4bcc-8ac8-5a4f39cb9aca",
+        "content": "Guido van Rossum created the Python programming language.\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "0",
+      "document_content": "content: Python is a high-level, interpreted programming language known for its readability and simplicity. It was created by Guido van Rossum and first released in 1991. Python supports multiple programming paradigms, including procedural, object-oriented, and functional programming.\nmetadata: {'topic': 'programming', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "23cbaa88-cb7c-4cf7-944e-c23625332720",
+      "input": {
+        "id": "b4bcc31b-f28f-4cf4-b5ff-7922fa5f96bf",
+        "content": "Is Python a compiled or interpreted language?  And what year did it first come out?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "ad89d55f-38a8-4aa5-8226-96434b265659",
+        "content": "Python is an interpreted language. It was first released in 1991.\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "0",
+      "document_content": "content: Python is a high-level, interpreted programming language known for its readability and simplicity. It was created by Guido van Rossum and first released in 1991. Python supports multiple programming paradigms, including procedural, object-oriented, and functional programming.\nmetadata: {'topic': 'programming', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "3effb420-bad3-4043-a52c-59cc86700a39",
+      "input": {
+        "id": "a53b4ae5-6a2d-41f0-8bbe-dc79013f21a9",
+        "content": "Can you explain what machine learning is?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "ac2b7d0d-1d42-4e23-ae83-dd5c7041f14e",
+        "content": "Machine learning is a subset of artificial intelligence that allows systems to learn from experience and improve automatically, without explicit programming.  It focuses on developing computer programs that can access and use data to learn for themselves.\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "2",
+      "document_content": "content: Machine Learning is a subset of artificial intelligence that provides systems the ability to automatically learn and improve from experience without being explicitly programmed. Machine learning focuses on the development of computer programs that can access data and use it to learn for themselves.\nmetadata: {'topic': 'ai', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "c54d8661-e7e2-48eb-b2df-6ecb07a51749",
+      "input": {
+        "id": "95e60b0c-ee31-463c-8e0e-0c5ed71fe80e",
+        "content": "How does machine learning differ from explicitly programming a system?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "050fe847-0e74-4123-ba82-6991221b942d",
+        "content": "Machine learning allows systems to learn and improve from experience without explicit programming.  In contrast to traditional programming, where rules and actions are explicitly defined, machine learning focuses on developing programs that can access data and use it to learn for themselves.\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "2",
+      "document_content": "content: Machine Learning is a subset of artificial intelligence that provides systems the ability to automatically learn and improve from experience without being explicitly programmed. Machine learning focuses on the development of computer programs that can access data and use it to learn for themselves.\nmetadata: {'topic': 'ai', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "0fec303d-389a-47d7-96a0-fb2a5cb84fb7",
+      "input": {
+        "id": "69d8621c-2803-4cc1-9f78-51ef06235dde",
+        "content": "What is the main purpose of JavaScript in web development?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "2d0fab93-7aa6-4d46-92eb-3fd386a9062c",
+        "content": "JavaScript's main purpose in web development is to enable interactive web pages and serve as an essential part of web applications.  It was initially created to \"make web pages alive.\"\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "1",
+      "document_content": "content: JavaScript is a programming language that is one of the core technologies of the World Wide Web. It enables interactive web pages and is an essential part of web applications. JavaScript was initially created to 'make web pages alive'.\nmetadata: {'topic': 'programming', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "ca54ae68-0b82-42b0-8785-1e40b4b4d593",
+      "input": {
+        "id": "a444dc80-d8f0-4c34-a40c-0426c9d12c6b",
+        "content": "Tell me about the role JavaScript plays in making websites interactive.",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "cf61d7b9-e10f-4817-b3b3-4a0ef24c415e",
+        "content": "JavaScript enables interactive web pages and is an essential part of web applications.  It was initially created to \"make web pages alive.\"\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "1",
+      "document_content": "content: JavaScript is a programming language that is one of the core technologies of the World Wide Web. It enables interactive web pages and is an essential part of web applications. JavaScript was initially created to 'make web pages alive'.\nmetadata: {'topic': 'programming', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "6c43ad23-dd74-462b-8f70-70881662a760",
+      "input": {
+        "id": "03e6b3ae-d495-43b5-8f7c-ea0f76b2d9af",
+        "content": "What are some of the applications of deep learning architectures like deep neural networks?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "84c7a6b4-a25b-49ca-b9f9-c7796b62f999",
+        "content": "Deep learning architectures such as deep neural networks have been applied to fields including computer vision, speech recognition, and natural language processing.\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "3",
+      "document_content": "content: Deep Learning is part of a broader family of machine learning methods based on artificial neural networks. Learning can be supervised, semi-supervised or unsupervised. Deep learning architectures such as deep neural networks have been applied to fields including computer vision, speech recognition, and natural language processing.\nmetadata: {'topic': 'ai', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    },
+    {
+      "id": "2147a93e-0480-4e10-9b0b-b7dc7e5b02a9",
+      "input": {
+        "id": "0a04a424-14dd-4076-9818-e7915910d31f",
+        "content": "Is deep learning a subset of machine learning, and if so, what is it based on?",
+        "metadata": {}
+      },
+      "reference_answer": {
+        "id": "7bfc0f6d-a626-4a4f-9b0e-fe1e094d38d6",
+        "content": "Yes, deep learning is a subset of machine learning methods. It is based on artificial neural networks.\n",
+        "documents": null,
+        "metadata": {}
+      },
+      "document_id": "3",
+      "document_content": "content: Deep Learning is part of a broader family of machine learning methods based on artificial neural networks. Learning can be supervised, semi-supervised or unsupervised. Deep learning architectures such as deep neural networks have been applied to fields including computer vision, speech recognition, and natural language processing.\nmetadata: {'topic': 'ai', 'language': 'en'}",
+      "metadata": {
+        "language": "en",
+        "topic_id": 0,
+        "topic_name": "Unknown",
+        "example_guided": false
+      }
+    }
+  ],
+  "metadata": {
+    "language": "en",
+    "agent_description": "A chatbot that answers questions about programming and AI",
+    "num_items": 10,
+    "num_documents": 5,
+    "num_topics": 1,
+    "source": "standard",
+    "distribution_strategy": "representative"
+  }
+}
