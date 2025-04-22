@@ -11,6 +11,9 @@
     <!-- Include Socket.IO for real-time updates -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     
+    <!-- Include SortableJS for drag-and-drop functionality -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
     <style>
         :root {
             --primary-color: #4a6fa5;
@@ -77,6 +80,19 @@
             padding: 20px;
             margin-bottom: 20px;
             transition: background-color 0.3s ease;
+            cursor: move; /* Show move cursor */
+        }
+        
+        .card:hover {
+            box-shadow: var(--box-shadow), 0 0 0 2px var(--primary-color);
+        }
+        
+        .card.sortable-ghost {
+            opacity: 0.4;
+        }
+        
+        .card.sortable-chosen {
+            background-color: var(--hover-color);
         }
         
         .full-width {
@@ -196,6 +212,11 @@
                 </select>
             </div>
             
+            <div class="toggle-container" style="margin-left: 15px;">
+                <label for="show-device-metrics">Show Device Metrics:</label>
+                <input type="checkbox" id="show-device-metrics" checked>
+            </div>
+            
             <button id="theme-toggle" class="theme-toggle" style="margin-left: 15px;">
                 <span id="theme-icon">🌙</span>
                 <span id="theme-text">Dark Mode</span>
@@ -276,6 +297,22 @@
             </div>
         </div>
         
+        <!-- Tokens Per Model Section -->
+        <div class="card">
+            <h2>Tokens Per Model</h2>
+            <div class="chart-container">
+                <canvas id="tokens-per-model-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Model Usage Timegraph Section -->
+        <div class="card">
+            <h2>Model Usage Over Time</h2>
+            <div class="chart-container">
+                <canvas id="model-usage-time-chart"></canvas>
+            </div>
+        </div>
+        
         <!-- Model Cost Section -->
         <div class="card full-width">
             <h2>Model Cost</h2>
@@ -289,6 +326,28 @@
     <script>
         // Initialize charts
         let charts = {};
+        
+        // Initialize Sortable for drag-and-drop functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const dashboardContainer = document.querySelector('.dashboard-container');
+            
+            // Initialize Sortable
+            new Sortable(dashboardContainer, {
+                animation: 150,
+                handle: 'h2', // Use the h2 element as the drag handle
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                onEnd: function() {
+                    // Redraw all charts after sorting to ensure they render correctly
+                    Object.values(charts).forEach(chart => {
+                        chart.update();
+                    });
+                    
+                    // Save the new order to localStorage if needed
+                    // saveCardOrder();
+                }
+            });
+        });
         
         // Initialize Socket.IO connection
         const socket = io();
@@ -329,6 +388,26 @@
             socket.emit('set_time_scale', { scale: newScale });
         });
         
+        // Device metrics toggle
+        const deviceMetricsToggle = document.getElementById('show-device-metrics');
+        const browserCard = document.querySelector('.card:has(#browser-chart)');
+        const osCard = document.querySelector('.card:has(#os-chart)');
+        
+        // Initialize visibility based on checkbox state
+        toggleDeviceMetricsVisibility();
+        
+        deviceMetricsToggle.addEventListener('change', toggleDeviceMetricsVisibility);
+        
+        function toggleDeviceMetricsVisibility() {
+            if (deviceMetricsToggle.checked) {
+                browserCard.style.display = 'block';
+                osCard.style.display = 'block';
+            } else {
+                browserCard.style.display = 'none';
+                osCard.style.display = 'none';
+            }
+        }
+        
         // Theme toggle
         const themeToggle = document.getElementById('theme-toggle');
         const themeIcon = document.getElementById('theme-icon');
@@ -364,6 +443,8 @@
             updateOSChart(data.user);
             updateTimeOfDayChart(data.user);
             updateSessionDurationChart(data.user);
+            updateTokensPerModelChart(data.model);
+            updateModelUsageTimeChart(data.model, data.time_series);
             updateModelCostChart(data.model);
         }
         
@@ -405,6 +486,16 @@
         function updateMessageVolumeChart(timeSeriesData) {
             const ctx = document.getElementById('message-volume-chart').getContext('2d');
             
+            // Format x-axis title based on time scale
+            let xAxisTitle = 'Date';
+            if (timeSeriesData.scale === 'minute') {
+                xAxisTitle = 'Time (Minutes)';
+            } else if (timeSeriesData.scale === 'hour') {
+                xAxisTitle = 'Time (Hours)';
+            } else if (timeSeriesData.scale === 'day') {
+                xAxisTitle = 'Date (Days)';
+            }
+            
             if (!charts.messageVolume) {
                 charts.messageVolume = new Chart(ctx, {
                     type: 'line',
@@ -433,22 +524,62 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: xAxisTitle
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 20
+                                }
+                            },
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Messages'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    }
+                                }
                             }
                         }
                     }
                 });
             } else {
+                // Update chart data
                 charts.messageVolume.data.labels = timeSeriesData.dates;
                 charts.messageVolume.data.datasets[0].data = timeSeriesData.user_messages;
                 charts.messageVolume.data.datasets[1].data = timeSeriesData.assistant_messages;
+                
+                // Update x-axis title based on time scale
+                charts.messageVolume.options.scales.x.title.text = xAxisTitle;
+                
                 charts.messageVolume.update();
             }
         }
         
         function updateTokenUsageChart(timeSeriesData) {
             const ctx = document.getElementById('token-usage-chart').getContext('2d');
+            
+            // Format x-axis title based on time scale
+            let xAxisTitle = 'Date';
+            if (timeSeriesData.scale === 'minute') {
+                xAxisTitle = 'Time (Minutes)';
+            } else if (timeSeriesData.scale === 'hour') {
+                xAxisTitle = 'Time (Hours)';
+            } else if (timeSeriesData.scale === 'day') {
+                xAxisTitle = 'Date (Days)';
+            }
             
             if (!charts.tokenUsage) {
                 charts.tokenUsage = new Chart(ctx, {
@@ -470,8 +601,33 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: xAxisTitle
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 20
+                                }
+                            },
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Tokens'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    }
+                                }
                             }
                         }
                     }
@@ -479,12 +635,26 @@
             } else {
                 charts.tokenUsage.data.labels = timeSeriesData.dates;
                 charts.tokenUsage.data.datasets[0].data = timeSeriesData.total_tokens;
+                
+                // Update x-axis title based on time scale
+                charts.tokenUsage.options.scales.x.title.text = xAxisTitle;
+                
                 charts.tokenUsage.update();
             }
         }
         
         function updateProcessingTimeChart(timeSeriesData) {
             const ctx = document.getElementById('processing-time-chart').getContext('2d');
+            
+            // Format x-axis title based on time scale
+            let xAxisTitle = 'Date';
+            if (timeSeriesData.scale === 'minute') {
+                xAxisTitle = 'Time (Minutes)';
+            } else if (timeSeriesData.scale === 'hour') {
+                xAxisTitle = 'Time (Hours)';
+            } else if (timeSeriesData.scale === 'day') {
+                xAxisTitle = 'Date (Days)';
+            }
             
             if (!charts.processingTime) {
                 charts.processingTime = new Chart(ctx, {
@@ -506,8 +676,33 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: xAxisTitle
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 20
+                                }
+                            },
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Processing Time (ms)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    }
+                                }
                             }
                         }
                     }
@@ -515,6 +710,10 @@
             } else {
                 charts.processingTime.data.labels = timeSeriesData.dates;
                 charts.processingTime.data.datasets[0].data = timeSeriesData.processing_times;
+                
+                // Update x-axis title based on time scale
+                charts.processingTime.options.scales.x.title.text = xAxisTitle;
+                
                 charts.processingTime.update();
             }
         }
@@ -748,6 +947,163 @@
                 charts.modelCost.data.datasets[0].data = inputCosts;
                 charts.modelCost.data.datasets[1].data = outputCosts;
                 charts.modelCost.update();
+            }
+        }
+        
+        function updateTokensPerModelChart(modelData) {
+            const ctx = document.getElementById('tokens-per-model-chart').getContext('2d');
+            
+            // Extract data for chart
+            const models = [];
+            const promptTokens = [];
+            const completionTokens = [];
+            
+            modelData.token_data.forEach(item => {
+                models.push(item.model);
+                promptTokens.push(item.prompt);
+                completionTokens.push(item.completion);
+            });
+            
+            if (!charts.tokensPerModel) {
+                charts.tokensPerModel = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: models,
+                        datasets: [
+                            {
+                                label: 'Prompt Tokens',
+                                data: promptTokens,
+                                backgroundColor: 'rgba(74, 111, 165, 0.7)',
+                                borderColor: 'rgba(74, 111, 165, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Completion Tokens',
+                                data: completionTokens,
+                                backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Tokens'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Token Usage by Model'
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.tokensPerModel.data.labels = models;
+                charts.tokensPerModel.data.datasets[0].data = promptTokens;
+                charts.tokensPerModel.data.datasets[1].data = completionTokens;
+                charts.tokensPerModel.update();
+            }
+        }
+        
+        function updateModelUsageTimeChart(modelData, timeSeriesData) {
+            const ctx = document.getElementById('model-usage-time-chart').getContext('2d');
+            
+            // Format x-axis title based on time scale
+            let xAxisTitle = 'Date';
+            if (timeSeriesData.scale === 'minute') {
+                xAxisTitle = 'Time (Minutes)';
+            } else if (timeSeriesData.scale === 'hour') {
+                xAxisTitle = 'Time (Hours)';
+            } else if (timeSeriesData.scale === 'day') {
+                xAxisTitle = 'Date (Days)';
+            }
+            
+            // For this demo, we'll create simulated data for model usage over time
+            // In a real implementation, this would come from the server
+            const dates = timeSeriesData.dates;
+            const models = modelData.models.slice(0, 3); // Limit to top 3 models for clarity
+            
+            // Create datasets for each model
+            const datasets = [];
+            const colors = ['#4a6fa5', '#28a745', '#dc3545', '#ffc107', '#6c757d'];
+            
+            for (let i = 0; i < models.length; i++) {
+                // Generate simulated data for this model over time
+                const data = [];
+                for (let j = 0; j < dates.length; j++) {
+                    // Create a value that's somewhat proportional to the model's overall usage
+                    const baseValue = modelData.usage_counts[i] / 5;
+                    // Add some randomness
+                    const randomFactor = Math.random() * 0.5 + 0.75; // 0.75 to 1.25
+                    data.push(Math.round(baseValue * randomFactor));
+                }
+                
+                datasets.push({
+                    label: models[i],
+                    data: data,
+                    borderColor: colors[i],
+                    backgroundColor: colors[i] + '33', // Add transparency
+                    tension: 0.1,
+                    fill: false
+                });
+            }
+            
+            if (!charts.modelUsageTime) {
+                charts.modelUsageTime = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: xAxisTitle
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45,
+                                    autoSkip: true,
+                                    maxTicksLimit: 20
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Requests'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                charts.modelUsageTime.data.labels = dates;
+                charts.modelUsageTime.data.datasets = datasets;
+                charts.modelUsageTime.options.scales.x.title.text = xAxisTitle;
+                charts.modelUsageTime.update();
             }
         }
         

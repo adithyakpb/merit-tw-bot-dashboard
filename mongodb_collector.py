@@ -278,9 +278,9 @@ class MongoDBCollector(BaseDataCollector):
             # Define time grouping
             time_format = "%Y-%m-%d"
             if group_by == "minute":
-                time_format = "%Y-%m-%d %H:%M"
+                time_format = "%H:%M"
             elif group_by == "hour":
-                time_format = "%Y-%m-%d %H:00"
+                time_format = "%H:00"
             elif group_by == "week":
                 time_format = "%Y-%U"
             elif group_by == "month":

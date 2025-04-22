@@ -118,6 +118,7 @@ def format_daily_time_series(daily_data):
     processing_times = []
     
     for day in daily_data:
+        # Use the actual timestamp as the label
         dates.append(day.get("date", ""))
         
         messages = day.get("messages", {})
@@ -138,21 +139,49 @@ def format_daily_time_series(daily_data):
 
 def format_hourly_time_series(hourly_data):
     """Format hourly time series data."""
+    # Create a full day of hours (0-23)
+    full_day = {}
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    # Initialize with zeros for all hours
+    for hour in range(24):
+        hour_str = f"{hour:02d}:00"
+        full_day[hour_str] = {
+            "date": hour_str,
+            "messages": {"user": 0, "assistant": 0},
+            "total_tokens": 0,
+            "avg_processing_time": 0
+        }
+    
+    # Fill in actual data
+    for hour in hourly_data:
+        hour_str = hour.get("date", "")
+        if hour_str in full_day:
+            full_day[hour_str] = hour
+    
+    # Convert to lists for charts
     dates = []
     user_messages = []
     assistant_messages = []
     total_tokens = []
     processing_times = []
     
-    for hour in hourly_data:
-        dates.append(hour.get("hour", ""))
+    # Add date to first hour and every 6 hours
+    for i, (hour_str, hour_data) in enumerate(sorted(full_day.items())):
+        # Add date prefix to certain hours for better readability
+        if i == 0 or i % 6 == 0:
+            label = f"{today} {hour_str}"
+        else:
+            label = hour_str
+            
+        dates.append(label)
         
-        messages = hour.get("messages", {})
+        messages = hour_data.get("messages", {})
         user_messages.append(messages.get("user", 0))
         assistant_messages.append(messages.get("assistant", 0))
         
-        total_tokens.append(hour.get("total_tokens", 0))
-        processing_times.append(hour.get("avg_processing_time", 0))
+        total_tokens.append(hour_data.get("total_tokens", 0))
+        processing_times.append(hour_data.get("avg_processing_time", 0))
     
     return {
         "dates": dates,
@@ -165,21 +194,51 @@ def format_hourly_time_series(hourly_data):
 
 def format_minute_time_series(minute_data):
     """Format minute time series data."""
+    # Create a full hour of minutes (0-59)
+    full_hour = {}
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
+    current_hour = now.strftime("%H")
+    
+    # Initialize with zeros for all minutes in the current hour
+    for minute in range(60):
+        minute_str = f"{current_hour}:{minute:02d}"
+        full_hour[minute_str] = {
+            "date": minute_str,
+            "messages": {"user": 0, "assistant": 0},
+            "total_tokens": 0,
+            "avg_processing_time": 0
+        }
+    
+    # Fill in actual data
+    for minute_entry in minute_data:
+        minute_str = minute_entry.get("date", "")
+        if minute_str in full_hour:
+            full_hour[minute_str] = minute_entry
+    
+    # Convert to lists for charts
     dates = []
     user_messages = []
     assistant_messages = []
     total_tokens = []
     processing_times = []
     
-    for minute in minute_data:
-        dates.append(minute.get("minute", ""))
+    # Add date to first minute and every 10 minutes
+    for i, (minute_str, minute_data) in enumerate(sorted(full_hour.items())):
+        # Add date prefix to certain minutes for better readability
+        if i == 0 or i % 10 == 0:
+            label = f"{today} {minute_str}"
+        else:
+            label = minute_str
+            
+        dates.append(label)
         
-        messages = minute.get("messages", {})
+        messages = minute_data.get("messages", {})
         user_messages.append(messages.get("user", 0))
         assistant_messages.append(messages.get("assistant", 0))
         
-        total_tokens.append(minute.get("total_tokens", 0))
-        processing_times.append(minute.get("avg_processing_time", 0))
+        total_tokens.append(minute_data.get("total_tokens", 0))
+        processing_times.append(minute_data.get("avg_processing_time", 0))
     
     return {
         "dates": dates,

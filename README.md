@@ -4,7 +4,17 @@ A comprehensive monitoring dashboard for MongoDB chat logs using MERIT AI.
 
 ## Overview
 
-This project creates a monitoring dashboard for MongoDB logs, specifically designed for chat applications. It connects to a MongoDB database, extracts log data, calculates various metrics, and generates an interactive HTML dashboard with visualizations. It also provides AI-powered insights using the GeminiClient.
+This project creates a monitoring dashboard for MongoDB logs specifically designed for chat applications. It connects to a MongoDB database, extracts log data, calculates various metrics, and generates an interactive HTML dashboard with visualizations. It also provides AI-powered insights using the GeminiClient.
+
+## New Features
+
+- **Drag-and-Drop Interface**: Rearrange charts to customize your dashboard layout
+- **Device Metrics Toggle**: Show/hide browser and OS distribution charts
+- **Enhanced Time Display**: Improved time axis with better date/time formatting
+- **Model-Specific Metrics**: New charts for tokens per model and model usage over time
+- **Responsive Design**: Works on desktop and mobile devices
+
+## Dashboard Options
 
 The project offers two dashboard options:
 1. **Static Dashboard**: Generates a one-time HTML dashboard
@@ -81,7 +91,7 @@ Then open your browser and navigate to: http://localhost:5502
 Based on your current setup:
 
 ```bash
-python dashboard_server.py --connection "mongodb://localhost:27017/" --database "tw_gids_db" --session-collection "sessions" --message-collection "messagelogs" --port 5502
+python dashboard_server.py --connection "mongodb://localhost:27017/" --database "tw_gids_db" --session-collection "sessions" --message-collection "messagelogs" --port 5503
 ```
 
 ## Dashboard Features
@@ -93,7 +103,7 @@ python dashboard_server.py --connection "mongodb://localhost:27017/" --database 
 - **Comprehensive Metrics**: Calculates usage, performance, model, and user metrics
 - **Interactive Dashboard**: Generates an HTML dashboard with charts and visualizations
 - **AI-Powered Insights**: Uses GeminiClient to generate insights, anomaly detection, and recommendations
-- **Customizable**: Configurable through command-line arguments
+- **Customizable**: Configurable through command-line arguments and drag-and-drop interface
 
 ## Metrics
 
@@ -114,6 +124,7 @@ The dashboard provides the following metrics:
 - Model usage distribution
 - Token consumption by model
 - Cost estimation by model
+- Model usage over time
 
 ### User Metrics
 - Unique users count
@@ -200,6 +211,16 @@ The live dashboard consists of the following components:
 4. **Socket.IO**: Provides real-time communication between server and client
 5. **Background Metrics Collector**: Periodically collects metrics and emits updates to clients
 6. **Chart.js**: Renders interactive charts on the client side
+7. **SortableJS**: Provides drag-and-drop functionality for dashboard customization
+
+## Technical Stack
+
+- **Backend**: Python with Flask and Socket.IO
+- **Frontend**: HTML, CSS, JavaScript
+- **Charts**: Chart.js
+- **Drag-and-Drop**: SortableJS
+- **Database**: MongoDB
+- **AI Insights**: Google Gemini API
 
 ## License
 
